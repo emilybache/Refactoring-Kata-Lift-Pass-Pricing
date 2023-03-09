@@ -48,8 +48,7 @@ def prices():
                 reduction = 0
                 for row in cursor.fetchall():
                     holiday = row[0]
-                    # needed for sqlite3
-                    if not isinstance(holiday, datetime):
+                    if connection_name == "sqlite3":
                         holiday = datetime.fromisoformat(holiday)
                     if "date" in request.args:
                         d = datetime.fromisoformat(request.args["date"])
