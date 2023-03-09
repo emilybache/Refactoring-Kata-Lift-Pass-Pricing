@@ -2,18 +2,18 @@ from pathlib import Path
 
 
 def create_lift_pass_db_connection(connection_options):
-    connection_functions = [
-        try_to_connect_with_odbc,
-        try_to_connect_with_pymysql,
-        try_to_connect_with_sqlite3,
-    ]
-    for fun in connection_functions:
+    connection_functions = {
+        "odbc_mysql": try_to_connect_with_odbc,
+        "pymysql": try_to_connect_with_pymysql,
+        "sqlite3": try_to_connect_with_sqlite3,
+    }
+    for name, fun in connection_functions.items():
         try:
             connection = fun(connection_options)
             if connection is not None:
-                return connection
+                return connection, name
         except Exception as e:
-            print(f"unable to connect to db with {fun}")
+            print(f"unable to connect to db with {name}")
     raise RuntimeError("Unable to connect to the database.")
 
 

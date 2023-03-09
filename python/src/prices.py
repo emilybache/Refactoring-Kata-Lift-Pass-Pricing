@@ -14,19 +14,23 @@ connection_options = {
     "password": 'mysql'}
 
 connection = None
+connection_name = None
 
 @app.route("/prices", methods=['GET', 'PUT'])
 def prices():
     res = {}
-    global connection
+    global connection, connection_name
     if connection is None:
-        connection = create_lift_pass_db_connection(connection_options)
+        connection, connection_name = create_lift_pass_db_connection(connection_options)
     if request.method == 'PUT':
         lift_pass_cost = request.args["cost"]
         lift_pass_type = request.args["type"]
         cursor = connection.cursor()
-        cursor.execute('INSERT INTO `base_price` (type, cost) VALUES (?, ?) ' +
-            'ON DUPLICATE KEY UPDATE cost = ?', (lift_pass_type, lift_pass_cost, lift_pass_cost))
+        if connection_name != "sqlite3":
+            cursor.execute('INSERT INTO `base_price` (type, cost) VALUES (?, ?) ' +
+                'ON DUPLICATE KEY UPDATE cost = ?', (lift_pass_type, lift_pass_cost, lift_pass_cost))
+        else:
+            cursor.execute('INSERT INTO `base_price` (type, cost) VALUES (?, ?) ', (lift_pass_type, lift_pass_cost))
         return {}
     elif request.method == 'GET':
         cursor = connection.cursor()
@@ -44,6 +48,9 @@ def prices():
                 reduction = 0
                 for row in cursor.fetchall():
                     holiday = row[0]
+                    # needed for sqlite3
+                    if not isinstance(holiday, datetime):
+                        holiday = datetime.fromisoformat(holiday)
                     if "date" in request.args:
                         d = datetime.fromisoformat(request.args["date"])
                         if d.year == holiday.year and d.month == holiday.month and holiday.day == d.day:
